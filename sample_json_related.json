@@ -1,0 +1,59 @@
+{ 
+	"answers" : [
+		{
+			"grouping_question": "Please let us know what type of organization do you represent",
+			"groups": [
+				{
+					"option": "For profit/Consulting company",
+					"total": "5",
+					"answer": {
+						"question": "Your area expertise",
+						"options": [
+							{
+								"title": "Enterprise Development", 
+								"votes": "1"
+							},
+							{
+								"title": "Financial Services", 
+								"votes": "1"
+							},
+							{
+								"title": "WASH", 
+								"votes": "1"
+							},
+							{
+								"title": "UNKNOWN", 
+								"votes": "2"
+							}
+						]
+					}
+				},
+				{
+					"option": "For profit/Consulting company",
+					"total": "5",
+					"answer": {
+						"question": "Your area expertise",
+						"options": [
+							{
+								"title": "Enterprise Development", 
+								"votes": "1"
+							},
+							{
+								"title": "Financial Services", 
+								"votes": "1"
+							},
+							{
+								"title": "WASH", 
+								"votes": "1"
+							},
+							{
+								"title": "UNKNOWN", 
+								"votes": "2"
+							}
+						]
+					}
+				}						
+			]
+		}
+	]
+}
