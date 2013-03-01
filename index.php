@@ -22,31 +22,32 @@ $app->get('/results/form/:idForm/:questions', function ($idForm, $questions) {
 			$resultsArr = array();
 			foreach($questionsArrs as $qArr) {
 				if(is_array($qArr)) {
-					echo "Related questions query<br />";
+//					echo "Related questions query<br />";
 					$sql = buildRelatedSqlQuery($qArr, $idForm);
-					echo $sql;
+//					echo $sql;
 					$resultArr = getRelatedJsonArray($sql);
 				}
 				else {
-					echo "Single question query<br />";
+//					echo "Single question query<br />";
 					$sql = buldSqlQuery(array ($qArr), $idForm);
 					$resultArr = getJsonArray($sql);
-					echo $sql;
+//					echo $sql;
 				}
 				
 				$resultsArr["answers"][] = $resultArr["answers"];
 			}
 
-			print_r($resultsArr);
+//			print_r($resultsArr);
 			$json = json_encode($resultsArr);
 			echo $json;
 		}
 		else {
-			echo "STANDARD<br />";
+//			echo "STANDARD<br />";
 			$sql = buldSqlQuery($questionsArrs, $idForm);
+//			echo $sql;
 			$resultArr = getJsonArray($sql);
 			$resultsArr["answers"][] = $resultArr["answers"];
-			print_r($resultsArr); echo "<br />";
+//			print_r($resultsArr); echo "<br />";
 			$json = json_encode($resultsArr);
 			echo $json;
 		}
@@ -54,13 +55,12 @@ $app->get('/results/form/:idForm/:questions', function ($idForm, $questions) {
 	else echo "ERROR: Wrong FormID or QuestionID";
 });
 
+$app->get('/results/display/graphs', function () {
+	$url = 'html/graphs.html';
+	$html = file_get_contents($url);
+	echo $html;
+});
 
 $app->run();
 
 ?>
-
-
-
-
-
-

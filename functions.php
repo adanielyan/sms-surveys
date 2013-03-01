@@ -151,7 +151,7 @@ function getFormId($form) {
  */
 function buldSqlQuery($arr, $form) {
 	$formId = getFormId($form);
-	$sql = "SELECT count(b.id) AS vote, b.choice_desc AS choice, c.description AS question, c.id AS questionId, d.description AS formName FROM surveyData AS a, formsQuestionChoice AS b, formsQuestion AS c, forms AS d WHERE (a.id_choice=b.id  AND b.question_id=c.id AND c.question_form_id=$formId) AND (";
+	$sql = "SELECT count(b.id) AS vote, b.choice_desc AS choice, b.id AS choice_id, c.description AS question, c.id AS questionId, d.description AS formName FROM surveyData AS a, formsQuestionChoice AS b, formsQuestion AS c, forms AS d WHERE (a.id_choice=b.id  AND b.question_id=c.id AND c.question_form_id=$formId) AND (";
 
 	foreach ($arr as $key => $value) {
 		$sql .= "(c.question_id=" . $value . " AND c.id = b.question_id AND c.question_form_id=" . $formId . ($key<(sizeof($arr)-1)?") OR ":")");
@@ -169,20 +169,20 @@ function buldSqlQuery($arr, $form) {
  */
 function buildRelatedSqlQuery($arr, $form) {
 	$formId = getFormId($form);
-	print_r($arr);
-	$sql = "SELECT fq1.description AS question1, fq1.id AS question_id1, fqc1.choice_desc AS choice1 ";
+	$sql = "SELECT forms.description AS formName, fq1.description AS question1, fq1.id AS question_id1, fqc1.choice_desc AS choice1, fqc1.id AS choice_id1 ";
 	foreach ($arr as $key => $value) {
 		if($key == 0) continue;
 		$sql .= ", question".($key+1)." ";
 		$sql .= ", question_id".($key+1)." ";
 		$sql .= ", choice".($key+1)." ";
+		$sql .= ", choice_id".($key+1)." ";
 	}	
 	$sql .= ", COUNT(fqc1.choice_desc) AS votes FROM ";
 	foreach ($arr as $key => $value) {
 		if($key == 0) continue;
-		$sql .= "(SELECT DISTINCT sd".($key+1).".sms_number AS sender, fqc".($key+1).".choice_desc AS choice".($key+1).", fq".($key+1).".description AS question".($key+1).", fq".($key+1).".id AS question_id".($key+1).", f".($key+1).".description AS formName FROM surveyData AS sd".($key+1).", formsQuestionChoice AS fqc".($key+1).", formsQuestion AS fq".($key+1).", forms AS f".($key+1)." WHERE sd".($key+1).".id_choice = fqc".($key+1).".id AND fqc".($key+1).".question_id = fq".($key+1).".id AND f".($key+1).".id =".$formId." AND fq".($key+1).".question_form_id = f".($key+1).".id AND fq".($key+1).".question_id =".$value.") AS x".($key+1).", ";
+		$sql .= "(SELECT DISTINCT sd".($key+1).".sms_number AS sender, fqc".($key+1).".choice_desc AS choice".($key+1).", fqc".($key+1).".id AS choice_id".($key+1).", fq".($key+1).".description AS question".($key+1).", fq".($key+1).".id AS question_id".($key+1).", f".($key+1).".description AS formName FROM surveyData AS sd".($key+1).", formsQuestionChoice AS fqc".($key+1).", formsQuestion AS fq".($key+1).", forms AS f".($key+1)." WHERE sd".($key+1).".id_choice = fqc".($key+1).".id AND fqc".($key+1).".question_id = fq".($key+1).".id AND f".($key+1).".id =".$formId." AND fq".($key+1).".question_form_id = f".($key+1).".id AND fq".($key+1).".question_id =".$value.") AS x".($key+1).", ";
 	}
-	$sql .= "surveyData AS sd1, formsQuestion AS fq1, formsQuestionChoice AS fqc1 WHERE ";
+	$sql .= "forms, surveyData AS sd1, formsQuestion AS fq1, formsQuestionChoice AS fqc1 WHERE ";
 	foreach ($arr as $key => $value) {
 		if($key == 0) continue;
 		$sql .= "sd1.sms_number = x".($key+1).".sender".($key<(sizeof($arr)-1)?" AND ":" ");
@@ -206,19 +206,18 @@ function getJsonArray($sql){
 
 		global $db;
 		if(!$db) connectDb();
-
-	   	$jsonArray = array("answers"=> array());
-		$questionId = 0;
 		$result = $db->query($sql);
+
+		$questionId = 0;
+		$jsonArray = array("answers"=>array());
 		$index = -1;
 		foreach($result as $row) {
-			
 			if($row["questionId"] != $questionId) {
 				$index++;
-				$jsonArray["answers"][] = array("question"=>$row["question"], "type"=>"multiple");
+				$jsonArray["answers"][] = array("question"=>$row["question"], "type"=>"multiple", "form_name"=>$row["formName"]);
 			}
 			
-			$jsonArray["answers"][$index]["answer"][] = array("option"=>$row["choice"], "votes"=>$row["vote"]);
+			$jsonArray["answers"][$index]["answer"][] = array("option_id"=>$row["choice_id"], "option"=>$row["choice"], "votes"=>$row["vote"]);
 			$questionId = $row["questionId"];
 		}
 		
@@ -241,22 +240,25 @@ function getRelatedJsonArray($sql){
 		global $db;
 		if(!$db) connectDb();
 
-	   	$jsonArray = array("answers"=> array());
-		$questionId = 0;
+	   	$jsonArray = array("groups"=> array());
+		$choiceId = 0;
+		$total = 0;
 		$result = $db->query($sql);
 		$index = -1;
 		foreach($result as $row) {
-			
-			if($row["questionId"] != $questionId) {
+			$jsonArray["grouping_question"] = $row["question1"];
+			$jsonArray["grouping_question_id"] = $row["question_id1"];
+			$jsonArray["form_name"]=$row["formName"];
+			if($row["choice_id1"] != $choiceId) {
 				$index++;
-				$jsonArray["answers"][] = array("question"=>$row["question"], "type"=>"multiple");
+				$jsonArray["groups"][] = array("option_id"=>$row["choice_id1"], "option"=>$row["choice1"], "answer"=>array("question"=>$row["question2"], "options"=>array()));
 			}
 			
-			$jsonArray["answers"][$index]["answer"][] = array("title"=>$row["choice"], "votes"=>$row["vote"]);
-			$questionId = $row["questionId"];
+			$jsonArray["groups"][$index]["answer"]["options"][] = array("title"=>$row["choice2"], "votes"=>$row["votes"]);
+			$choiceId = $row["choice_id1"];
 		}
 		
-		return $jsonArray;
+		return array("answers"=>$jsonArray);
 	}
 	else return null;
 }
