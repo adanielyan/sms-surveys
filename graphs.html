@@ -6,11 +6,12 @@
 	// Load the Visualization API and the piechart package.
 	google.load('visualization', '1.0', {'packages':['corechart']});
 	// Set a callback to run when the Google Visualization API is loaded.
-	
-	$.get('../../results/form/10/1|2|3', function(data) {
-		var results = $.parseJSON(data);
-		google.setOnLoadCallback(drawChart);
-		function drawChart() {
+	google.setOnLoadCallback(showResults);
+	var int=self.setInterval(function(){showResults()},5000);
+	function showResults() {
+		$.get('../../results/form/10/1|2|3', function(data) {
+			var results = $.parseJSON(data);
+
 	        // Create the data table.
 	        for (var i = 0; i < results.answers[0].length; i++) {
 		        var data = new google.visualization.DataTable();
@@ -18,7 +19,7 @@
 		        data.addColumn('number', 'votes');
 		        $('#form-name').html(results.answers[0][0].form_name);
 		        for (var j = 0; j < results.answers[0][i].answer.length; j++) {
-		        	data.addRow([results.answers[0][i].answer[j].option, parseInt(results.answers[0][0].answer[j].votes)]);
+		        	data.addRow([results.answers[0][i].answer[j].option, parseInt(results.answers[0][i].answer[j].votes)]);
 		        };
 
 		        // Set chart options
@@ -33,9 +34,9 @@
 		        var chart = new google.visualization.PieChart(document.getElementById(id));
 		        chart.draw(data, options);
 	    	}
-      	}
-		//$('#graph1').html(results.answers[0][0].question);
-	});
+			//$('#graph1').html(results.answers[0][0].question);
+		});
+	}
 	</script>
 <style>
 .chart {
@@ -48,5 +49,6 @@
 	<h1 id="form-name">Form #10</h1>
 	<div id="charts"></div>
 	<div id="graph1"></div>
+	<button onclick="int=window.clearInterval(int)">Stop Refreshing</button>
 </body>
 </html>
