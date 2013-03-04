@@ -6,7 +6,7 @@
 
 $dbuser ="root";
 $dbpass= "eR1Izka8UxWhbgNp8D9N";
-$dbname= "FHIsurvey";
+$dbname= "surveys";
 
 $db = null;
 
@@ -17,6 +17,78 @@ function connectDb()
 {
 	global $db, $dbname, $dbuser, $dbpass;
 	$db = new PDO('mysql:host=localhost;dbname='. $dbname .';charset=utf8', $dbuser, $dbpass);
+}
+
+/**
+ * Saves data submitted by user as it is
+ * @param  string $txttext
+ * @param  string $txtfrom             
+ * @param  string $txtnetwork          
+ * @param  string $txtmessage_id       
+ * @param  string $txtmessage_timestamp
+ * @return integer or false
+ */
+function saveSMS($txttext,  $txtfrom,  $txtnetwork, $txtmessage_id, $txtmessage_timestamp){
+	global $db;
+	if(!$db) connectDb();
+
+  	$sql = "INSERT INTO inbound_sms (fromtxt, totxt, content, date_created, date_received) VALUES ('$txtfrom','$txtnetwork', '$txttext', '$txtmessage_timestamp', now())";
+	$result = false;
+	try {
+		$result = $db->exec($sql);
+
+	}
+	catch (PDOException $e) {
+		$error = $e->getMessage();
+	}
+	return $result;
+}
+
+/**
+ * Gets choice id by given choice 
+ * @param  string $choice   choice (i.e. a, b or c)
+ * @param  string $questionId question.id
+ * @return string or null
+ */
+function getChoiceId($choice, $questionId){
+	global $db;
+	if(!$db) connectDb();
+
+	$sql = "SELECT a.id FROM choices AS a, questions AS b WHERE  a.question_id=b.id AND b.id=$questionId AND a.choice='$choice'";
+
+	$result = null;
+	try {
+		echo $sql; echo '<br />';
+		$result = $db->query($sql);
+
+	}
+	catch (PDOException $e) {
+		$error = $e->getMessage();
+	}
+	return $result===false?null:$result->fetch(PDO::FETCH_OBJ)->id;
+
+}
+
+/**
+ * Saves processed data submitted by user
+ * @param string $choiceId  
+ * @param string $txtfrom   sender's phone number
+ * @return integer or false
+ */
+function SaveSurvey($choiceId, $txtfrom){
+	global $db;
+	if(!$db) connectDb();
+
+	$sql ="INSERT INTO survey_data  (choice_id, sms_number, date_created) values ($choiceId, $txtfrom, now())";
+	$result = false;
+	try {
+		$result = $db->exec($sql);
+
+	}
+	catch (PDOException $e) {
+		$error = $e->getMessage();
+	}
+	return $result;
 }
 
 /**
@@ -32,7 +104,7 @@ function getQuestionId($questionId, $form){
 
 	$formId = getFormId($form);
 	if($formId) {
-		$sql = "SELECT id FROM formsQuestion WHERE  question_id ='$questionId' and question_form_id='$formId'  ";
+		$sql = "SELECT id FROM questions WHERE  question ='$questionId' and form_id='$formId'  ";
 
 		try {
 			$result = $db->query($sql)->fetch(PDO::FETCH_OBJ);
@@ -120,6 +192,32 @@ function questionIdsExist($arr, $form) {
 }
 
 /**
+ * Checks if the user has already answered that question
+ * @param  string $phone  user's phone number
+ * @param  string $question  question ID
+ * @param  string $form form ID
+ */
+function alreadyAnswered($sender, $questionId) {
+
+	global $db;
+	$sql = "SELECT DISTINCT survey_data.id FROM survey_data, (SELECT choices.id AS cid FROM choices WHERE question_id =".$questionId.") AS c WHERE survey_data.sms_number =  '".$sender."' AND c.cid=survey_data.choice_id";
+
+	// $result  = mysql_query($sql);
+	if(!$db) connectDb();
+	try {
+		$result = $db->query($sql)->fetch(PDO::FETCH_OBJ);
+	}
+	catch (PDOException $e) {
+		$error = $e->getMessage();
+	}
+
+	if($result) 
+		return true;
+	else
+		return false;
+}
+
+/**
  * Gets the form real ID by user friendly ID
  * @param  string $form user friendly ID
  * @return string or null
@@ -127,7 +225,7 @@ function questionIdsExist($arr, $form) {
 function getFormId($form) {
 
 	global $db;
-	$sql = "SELECT id FROM forms WHERE form_id=" . $form;
+	$sql = "SELECT id FROM forms WHERE form=" . $form;
 	// $result  = mysql_query($sql);
 	if(!$db) connectDb();
 	try {
@@ -144,6 +242,53 @@ function getFormId($form) {
 }
 
 /**
+ * Gets form name by id
+ * @param  string $formId
+ * @return string or null
+ */
+function getFormName($formId){
+
+	global $db;
+	$sql3 = "SELECT form FROM forms WHERE  form ='$formId' ";
+
+	if(!$db) connectDb();
+	try {
+		$result = $db->query($sql)->fetch(PDO::FETCH_OBJ);
+	}
+	catch (PDOException $e) {
+		$error = $e->getMessage();
+	}
+
+	if($result) 
+		return $result->form;
+	else
+		return null;
+}
+
+/**
+ * Checks is form with given name exists
+ * @param  string $formName
+ * @return boolean
+ */
+function formExists($formName){
+	global $db;
+	$sql = "SELECT form FROM forms WHERE  form ='$formName' ";
+
+	if(!$db) connectDb();
+	try {
+		$result = $db->query($sql);
+	}
+	catch (PDOException $e) {
+		$error = $e->getMessage();
+	}
+
+	if($result!==false) 
+		return true;
+	else
+		return false;
+}
+
+/**
  * Builds the SQL query based on given form ID and array of question IDs
  * @param  array  $arr  Array of questions
  * @param  string $form Form ID
@@ -151,10 +296,11 @@ function getFormId($form) {
  */
 function buldSqlQuery($arr, $form) {
 	$formId = getFormId($form);
-	$sql = "SELECT count(b.id) AS vote, b.choice_desc AS choice, b.id AS choice_id, c.description AS question, c.id AS questionId, d.description AS formName FROM surveyData AS a, formsQuestionChoice AS b, formsQuestion AS c, forms AS d WHERE (a.id_choice=b.id  AND b.question_id=c.id AND c.question_form_id=$formId) AND (";
+
+	$sql = "SELECT count(b.id) AS vote, b.description AS choice, b.id AS choice_id, c.description AS question, c.id AS questionId, d.description AS formName FROM survey_data AS a LEFT JOIN choices AS b ON a.choice_id = b.id LEFT JOIN questions AS c ON c.id = b.question_id LEFT JOIN forms AS d ON c.form_id = d.id WHERE c.form_id=$formId AND (";
 
 	foreach ($arr as $key => $value) {
-		$sql .= "(c.question_id=" . $value . " AND c.id = b.question_id AND c.question_form_id=" . $formId . ($key<(sizeof($arr)-1)?") OR ":")");
+		$sql .= "(c.question=" . $value . " AND c.form_id=" . $formId . ($key<(sizeof($arr)-1)?") OR ":")");
 	}
 
 	$sql .=  ") GROUP BY b.id";
@@ -169,7 +315,7 @@ function buldSqlQuery($arr, $form) {
  */
 function buildRelatedSqlQuery($arr, $form) {
 	$formId = getFormId($form);
-	$sql = "SELECT forms.description AS formName, fq1.description AS question1, fq1.id AS question_id1, fqc1.choice_desc AS choice1, fqc1.id AS choice_id1 ";
+	$sql = "SELECT forms.description AS formName, fq1.description AS question1, fq1.id AS question_id1, fqc1.description AS choice1, fqc1.id AS choice_id1 ";
 	foreach ($arr as $key => $value) {
 		if($key == 0) continue;
 		$sql .= ", question".($key+1)." ";
@@ -177,21 +323,23 @@ function buildRelatedSqlQuery($arr, $form) {
 		$sql .= ", choice".($key+1)." ";
 		$sql .= ", choice_id".($key+1)." ";
 	}	
-	$sql .= ", COUNT(fqc1.choice_desc) AS votes FROM ";
+	$sql .= ", COUNT(fqc1.description) AS votes FROM ";
 	foreach ($arr as $key => $value) {
 		if($key == 0) continue;
-		$sql .= "(SELECT DISTINCT sd".($key+1).".sms_number AS sender, fqc".($key+1).".choice_desc AS choice".($key+1).", fqc".($key+1).".id AS choice_id".($key+1).", fq".($key+1).".description AS question".($key+1).", fq".($key+1).".id AS question_id".($key+1).", f".($key+1).".description AS formName FROM surveyData AS sd".($key+1).", formsQuestionChoice AS fqc".($key+1).", formsQuestion AS fq".($key+1).", forms AS f".($key+1)." WHERE sd".($key+1).".id_choice = fqc".($key+1).".id AND fqc".($key+1).".question_id = fq".($key+1).".id AND f".($key+1).".id =".$formId." AND fq".($key+1).".question_form_id = f".($key+1).".id AND fq".($key+1).".question_id =".$value.") AS x".($key+1).", ";
+		$sql .= "(SELECT DISTINCT sd".($key+1).".sms_number AS sender, fqc".($key+1).".description AS choice".($key+1).", fqc".($key+1).".id AS choice_id".($key+1).", fq".($key+1).".description AS question".($key+1).", fq".($key+1).".id AS question_id".($key+1).", f".($key+1).".description AS formName, f".($key+1).".id AS form_id FROM survey_data AS sd".($key+1)." LEFT JOIN choices AS fqc".($key+1)." ON sd".($key+1).".choice_id = fqc".($key+1).".id LEFT JOIN questions AS fq".($key+1)." ON fqc".($key+1).".question_id = fq".($key+1).".id LEFT JOIN forms AS f".($key+1)." ON fq".($key+1).".form_id = f".($key+1).".id WHERE f".($key+1).".id =".$formId." AND fq".($key+1).".question =".$value.") AS x".($key+1).", ";
 	}
-	$sql .= "forms, surveyData AS sd1, formsQuestion AS fq1, formsQuestionChoice AS fqc1 WHERE ";
+	$sql .= "survey_data AS sd1 LEFT JOIN choices AS fqc1 ON sd1.choice_id = fqc1.id LEFT JOIN questions AS fq1 ON fq1.id = fqc1.question_id LEFT JOIN forms ON fq1.form_id = forms.id  WHERE ";
 	foreach ($arr as $key => $value) {
 		if($key == 0) continue;
-		$sql .= "sd1.sms_number = x".($key+1).".sender".($key<(sizeof($arr)-1)?" AND ":" ");
+		$sql .= "sd1.sms_number = x".($key+1).".sender AND ";
+		$sql .= "forms.id = x".($key+1).".form_id".($key<(sizeof($arr)-1)?" AND ":" ");
 	}
-	$sql .= "AND fq1.id = fqc1.question_id AND sd1.id_choice = fqc1.id AND fq1.question_id =".$arr[0]." GROUP BY choice1, ";	
+	$sql .= "AND fq1.question =".$arr[0]." GROUP BY choice1, ";	
 	foreach ($arr as $key => $value) {
 		if($key == 0) continue;
 		$sql .= "choice".($key+1).($key<(sizeof($arr)-1)?", ":" ");
 	}
+	//echo $sql;
 	return $sql;
 }
 
@@ -258,7 +406,7 @@ function getRelatedJsonArray($sql){
 			$choiceId = $row["choice_id1"];
 		}
 		
-		return array("answers"=>$jsonArray);
+		return array($jsonArray);
 	}
 	else return null;
 }
