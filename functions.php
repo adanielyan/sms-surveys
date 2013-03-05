@@ -1,6 +1,6 @@
 <?php
 /**
- * Defines functions for generating the JSON string of results based on given Form ID and Question ID(s)
+ * Defines functions for processing text messages and for generating quesry results in JSON format.
  */
 
 
