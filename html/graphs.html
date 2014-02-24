@@ -1,0 +1,104 @@
+	<script type="text/javascript">
+	// Load the Visualization API and the piechart package.
+	google.load('visualization', '1.0', {'packages':['corechart']});
+	// Set a callback to run when the Google Visualization API is loaded.
+	google.setOnLoadCallback(function() { showResults(form, questions); });
+	var int=self.setInterval(function(){showResults(form, questions)},5000);
+	function showResults(form, questions) {
+		$.get('/results/form/'+form+'/'+questions, function(data) {
+			var results = $.parseJSON(data);
+
+			// Create the data table.
+			for (var n = 0; n < results.answers.length; n++) {
+		          for (var i = 0; i < results.answers[n].length; i++) {
+			        $('#form-name').html(results.answers[n][i].form_name);
+			        var id = 'chart-'+n+'-'+i;
+			        $('#charts').append('<div class="chart" id="'+id+'"></div>');
+			        var dataArray = new Array();
+					if(results.answers[n][i].groups) {
+						if(results.answers[n][i].groups.length>0) {
+							dataArray[0] = new Array();
+							dataArray[0][0] = results.answers[n][i].grouping_question;
+						}
+				        for (var j = 0; j < results.answers[n][i].groups.length; j++) {
+							dataArray[j+1] = new Array();
+							dataArray[j+1][0] = results.answers[n][i].groups[j].option;
+				        	for (var k = 0; k < results.answers[n][i].groups[j].answer.options.length; k++) {
+				        		dataArray[0][results.answers[n][i].groups[j].answer.options[k].title] = results.answers[n][i].groups[j].answer.options[k].title;
+				        		dataArray[j+1][results.answers[n][i].groups[j].answer.options[k].title] = parseInt(results.answers[n][i].groups[j].answer.options[k].votes);
+							};
+						}
+						var iter = 0, tempArray = new Array();
+						for(var item in dataArray[0]) {
+							tempArray[iter++] = dataArray[0][item];
+						}
+						dataArray[0] = tempArray;
+
+						for(var m=1; m<dataArray.length; m++) {
+							tempArray = new Array();
+							for(var item in dataArray[0]) {
+								if(item == 0) {
+									tempArray[0] = dataArray[m][0]; 
+									continue;
+								}
+								if(dataArray[m][dataArray[0][item]]) {
+									tempArray[dataArray[0].indexOf(dataArray[0][item])] = dataArray[m][dataArray[0][item]];
+								}
+								else {
+									tempArray[dataArray[0].indexOf(dataArray[0][item])] = 0;
+								}
+							}
+							dataArray[m] = tempArray;
+						}
+						
+					var chartData = google.visualization.arrayToDataTable(dataArray);
+			        	var options = {	'title':results.answers[n][i].grouping_question,
+			        					'isStacked': true, 
+			        					'legend': 'bottom',
+			        					'width':700,
+										'height':400}
+			        	
+				        var chart = new google.visualization.ColumnChart(document.getElementById(id));
+				        chart.draw(chartData, options);
+				        
+			    	}
+			        else {
+			        	var chartData = new google.visualization.DataTable();
+				        chartData.addColumn('string', 'options');
+				        chartData.addColumn('number', 'votes');
+
+						for (var j = 0; j < results.answers[n][i].answer.length; j++) {
+							chartData.addRow([results.answers[n][i].answer[j].option, parseInt(results.answers[n][i].answer[j].votes)]);
+						};
+
+				        // Set chart options
+				        var options = { 'title':results.answers[n][i].question,
+										'pieSliceText':'value',
+										'width':700,
+										'height':400};
+
+				        // Instantiate and draw our chart, passing in some options.			        			        
+				        var chart = new google.visualization.PieChart(document.getElementById(id));
+				        chart.draw(chartData, options);
+				    }
+		    	}
+		    }
+			//$('#graph1').html(results.answers[0][0].question);
+		});
+	}
+	</script>
+<style>
+.chart {
+	float: left;
+}
+</style>
+</head>
+
+<body>
+	<h1 id="form-name">Form #10</h1>
+	<div id="charts"></div>
+	<div id="graph1"></div>
+	<button onclick="int=window.clearInterval(int)">Stop Refreshing</button>
+</body>
+</html></body>
+</html>

@@ -4,10 +4,9 @@
  */
 
 
-$dbuser ="root";
-$dbpass= "eR1Izka8UxWhbgNp8D9N";
-$dbname= "surveys";
-
+$dbuser ="data";
+$dbpass= "VzRmWlquf7HJNUHhGS7e";
+$dbname= "data";
 $db = null;
 
 /**
@@ -405,8 +404,8 @@ function getRelatedJsonArray($sql){
 			$jsonArray["groups"][$index]["answer"]["options"][] = array("title"=>$row["choice2"], "votes"=>$row["votes"]);
 			$choiceId = $row["choice_id1"];
 		}
-		
-		return array($jsonArray);
+		$jsonArray =  array($jsonArray);
+		return array("answers"=>$jsonArray);
 	}
 	else return null;
 }
