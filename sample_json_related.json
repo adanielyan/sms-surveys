@@ -1,59 +1,147 @@
-{ 
-	"answers" : [
-		{
-			"grouping_question": "Please let us know what type of organization do you represent",
-			"groups": [
-				{
-					"option": "For profit/Consulting company",
-					"total": "5",
-					"answer": {
-						"question": "Your area expertise",
-						"options": [
-							{
-								"title": "Enterprise Development", 
-								"votes": "1"
-							},
-							{
-								"title": "Financial Services", 
-								"votes": "1"
-							},
-							{
-								"title": "WASH", 
-								"votes": "1"
-							},
-							{
-								"title": "UNKNOWN", 
-								"votes": "2"
-							}
-						]
-					}
-				},
-				{
-					"option": "For profit/Consulting company",
-					"total": "5",
-					"answer": {
-						"question": "Your area expertise",
-						"options": [
-							{
-								"title": "Enterprise Development", 
-								"votes": "1"
-							},
-							{
-								"title": "Financial Services", 
-								"votes": "1"
-							},
-							{
-								"title": "WASH", 
-								"votes": "1"
-							},
-							{
-								"title": "UNKNOWN", 
-								"votes": "2"
-							}
-						]
-					}
-				}						
-			]
-		}
-	]
+{
+    "answers": [
+        [
+            {
+                "groups": [
+                    {
+                        "option_id": "44",
+                        "option": "0 to 3 miles",
+                        "answer": {
+                            "question": "What is your favorite social network site in the following list?",
+                            "options": [
+                                {
+                                    "title": "Facebook",
+                                    "votes": "2"
+                                },
+                                {
+                                    "title": "Linkedin",
+                                    "votes": "1"
+                                },
+                                {
+                                    "title": "Twitter",
+                                    "votes": "2"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "option_id": "46",
+                        "option": "10 to 20 miles",
+                        "answer": {
+                            "question": "What is your favorite social network site in the following list?",
+                            "options": [
+                                {
+                                    "title": "Google plus",
+                                    "votes": "1"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "option_id": "45",
+                        "option": "3 to 10",
+                        "answer": {
+                            "question": "What is your favorite social network site in the following list?",
+                            "options": [
+                                {
+                                    "title": "Facebook",
+                                    "votes": "2"
+                                },
+                                {
+                                    "title": "Linkedin",
+                                    "votes": "1"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "option_id": "47",
+                        "option": "More than 20 miles",
+                        "answer": {
+                            "question": "What is your favorite social network site in the following list?",
+                            "options": [
+                                {
+                                    "title": "Facebook",
+                                    "votes": "1"
+                                },
+                                {
+                                    "title": "Twitter",
+                                    "votes": "1"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "grouping_question": "How far do you travel to work? ",
+                "grouping_question_id": "14",
+                "form_name": "Techlab survey"
+            }
+        ],
+        [
+            {
+                "groups": [
+                    {
+                        "option_id": "55",
+                        "option": "Water",
+                        "answer": {
+                            "question": "What is your favorite side order?",
+                            "options": [
+                                {
+                                    "title": "Fries",
+                                    "votes": "2"
+                                },
+                                {
+                                    "title": "Mashed Potatoes",
+                                    "votes": "1"
+                                },
+                                {
+                                    "title": "Veggies",
+                                    "votes": "3"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "option_id": "54",
+                        "option": "wine",
+                        "answer": {
+                            "question": "What is your favorite side order?",
+                            "options": [
+                                {
+                                    "title": "Fries",
+                                    "votes": "3"
+                                },
+                                {
+                                    "title": "Mashed Potatoes",
+                                    "votes": "1"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "grouping_question": "What do you usually drink with dinner?",
+                "grouping_question_id": "16",
+                "form_name": "Techlab survey"
+            }
+        ],
+        [
+            {
+                "question": "What is your gender?",
+                "type": "multiple",
+                "form_name": "Techlab survey",
+                "answer": [
+                    {
+                        "option_id": "42",
+                        "option": "Male",
+                        "votes": "8"
+                    },
+                    {
+                        "option_id": "43",
+                        "option": "Female",
+                        "votes": "4"
+                    }
+                ]
+            }
+        ]
+    ]
 }
